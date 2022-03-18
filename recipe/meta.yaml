@@ -9,6 +9,8 @@ package:
 source:
   url: https://github.com/fortran-lang/stdlib/archive/refs/tags/v{{ version }}.tar.gz
   sha256: eccb7a1027b3055699e05e2a55cce9802c17292355380cfa5365dedd8ebe754d
+  patches:
+    - stdlib-637.patch
 
 build:
   number: {{ build }}

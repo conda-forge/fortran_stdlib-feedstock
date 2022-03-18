@@ -1,0 +1,119 @@
+From 21ae83adf679151715aa61518b6226dd7ad8e8e9 Mon Sep 17 00:00:00 2001
+From: Sebastian Ehlert <28669218+awvwgk@users.noreply.github.com>
+Date: Fri, 18 Mar 2022 10:47:25 +0100
+Subject: [PATCH] Only set Fortran arguments for Fortran compiler
+
+---
+ CMakeLists.txt            | 32 +++++------------------
+ config/DefaultFlags.cmake | 54 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 61 insertions(+), 25 deletions(-)
+ create mode 100644 config/DefaultFlags.cmake
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 17efb8e27..0b78699e8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,8 @@
+ cmake_minimum_required(VERSION 3.14.0)
++
++# Include overwrites before setting up the project
++set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/config/DefaultFlags.cmake)
++
+ project(fortran_stdlib
+         LANGUAGES Fortran
+         DESCRIPTION "Community driven and agreed upon de facto standard library for Fortran"
+@@ -22,31 +26,9 @@ include(${PROJECT_SOURCE_DIR}/cmake/stdlib.cmake)
+ # --- CMake specific configuration and package data export
+ add_subdirectory(config)
+ 
+-# --- compiler options
+-if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
+-  if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 9.0)
+-    message(FATAL_ERROR "GCC Version 9 or newer required")
+-  endif()
+-  add_compile_options(-fimplicit-none)
+-  add_compile_options(-ffree-line-length-132)
+-  add_compile_options(-fno-range-check) # Needed for gfortran 9 and
+-  # earlier for hash functions 
+-  add_compile_options(-Wall)
+-  add_compile_options(-Wextra)
+-  add_compile_options(-Wimplicit-procedure)
+-  # -pedantic-errors triggers a false positive for optional arguments of elemental functions,
+-  # see test_optval and https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95446
+-  if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 11.0)
+-    add_compile_options(-pedantic-errors)
+-  endif()
+-  add_compile_options(-std=f2018)
+-elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
+-  if(WIN32)
+-    set(fortran_flags /stand:f18 /warn:declarations,general,usage,interfaces,unused)
+-  else()
+-    set(fortran_flags -stand f18 -warn declarations,general,usage,interfaces,unused)
+-  endif()
+-  add_compile_options("$<$<COMPILE_LANGUAGE:Fortran>:${fortran_flags}>")
++# --- compiler selection
++if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU AND CMAKE_Fortran_COMPILER_VERSION VERSION_LESS 9.0)
++  message(FATAL_ERROR "GCC Version 9 or newer required")
+ endif()
+ 
+ # --- compiler feature checks
+diff --git a/config/DefaultFlags.cmake b/config/DefaultFlags.cmake
+new file mode 100644
+index 000000000..b07a170ee
+--- /dev/null
++++ b/config/DefaultFlags.cmake
+@@ -0,0 +1,54 @@
++if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
++  set(
++    CMAKE_Fortran_FLAGS_INIT
++    "-fimplicit-none"
++    "-ffree-line-length-132"
++    "-fno-range-check"
++  )
++  set(
++    CMAKE_Fortran_FLAGS_RELEASE_INIT
++  )
++  set(
++    CMAKE_Fortran_FLAGS_DEBUG_INIT
++    "-Wall"
++    "-Wextra"
++    "-Wimplicit-procedure"
++    "-std=f2018"
++  )
++elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
++  set(
++    CMAKE_Fortran_FLAGS_INIT
++  )
++  set(
++    CMAKE_Fortran_FLAGS_RELEASE_INIT
++  )
++  if(WIN32)
++    set(
++      CMAKE_Fortran_FLAGS_DEBUG_INIT
++      "/stand:f18"
++      "/warn:declarations,general,usage,interfaces,unused"
++    )
++  else()
++    set(
++      CMAKE_Fortran_FLAGS_RELEASE_INIT
++    )
++    set(
++      CMAKE_Fortran_FLAGS_DEBUG_INIT
++      "-stand f18"
++      "-warn declarations,general,usage,interfaces,unused"
++    )
++  endif()
++else()
++  set(
++    CMAKE_Fortran_FLAGS_INIT
++  )
++  set(
++    CMAKE_Fortran_FLAGS_RELEASE_INIT
++  )
++  set(
++    CMAKE_Fortran_FLAGS_DEBUG_INIT
++  )
++endif()
++string(REPLACE ";" " " CMAKE_Fortran_FLAGS_INIT "${CMAKE_Fortran_FLAGS_INIT}")
++string(REPLACE ";" " " CMAKE_Fortran_FLAGS_RELEASE_INIT "${CMAKE_Fortran_FLAGS_RELEASE_INIT}")
++string(REPLACE ";" " " CMAKE_Fortran_FLAGS_DEBUG_INIT "${CMAKE_Fortran_FLAGS_DEBUG_INIT}")
