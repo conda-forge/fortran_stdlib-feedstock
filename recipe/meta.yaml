@@ -1,6 +1,6 @@
 {% set name = "fortran_stdlib" %}
 {% set version = "0.2.0" %}
-{% set build = 0 %}
+{% set build = 1 %}
 
 package:
   name: {{ name|lower }}
@@ -11,15 +11,26 @@ source:
   sha256: eccb7a1027b3055699e05e2a55cce9802c17292355380cfa5365dedd8ebe754d
   patches:
     - stdlib-637.patch
+    - stdlib-642.patch
 
 build:
   number: {{ build }}
   skip: true  # [win]
   script:
-    - cmake ${CMAKE_ARGS} -DBUILD_SHARED_LIBS=ON -G Ninja -B _build
+    - >
+       cmake ${CMAKE_ARGS}
+       -DBUILD_SHARED_LIBS=ON
+       -G Ninja -B _build
+       -DWITH_QP_EXITCODE=1  # [osx and arm64]
+       -DWITH_QP_EXITCODE__TRYRUN_OUTPUT=''  # [osx and arm64]
+       -DWITH_XDP_EXITCODE=1  # [osx and arm64]
+       -DWITH_XDP_EXITCODE__TRYRUN_OUTPUT=''  # [osx and arm64]
     - cmake --build _build
-    - ctest --test-dir _build --output-on-failure --parallel  # [build_platform != target_platform]
+    - ctest --test-dir _build --output-on-failure --parallel  # [build_platform == target_platform]
     - cmake --install _build
+
+  run_exports:
+    - {{ pin_subpackage(name, max_pin='x.x') }}
 
 requirements:
   build:
