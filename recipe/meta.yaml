@@ -1,6 +1,5 @@
 {% set name = "fortran_stdlib" %}
-{% set version = "0.2.0" %}
-{% set build = 1 %}
+{% set version = "0.2.1" %}
 
 package:
   name: {{ name|lower }}
@@ -8,23 +7,21 @@ package:
 
 source:
   url: https://github.com/fortran-lang/stdlib/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: eccb7a1027b3055699e05e2a55cce9802c17292355380cfa5365dedd8ebe754d
-  patches:
-    - stdlib-637.patch
-    - stdlib-642.patch
+  sha256: add8f1fa8d36757a9fef4141ebeec2386b70728ba6bb3d15e99221b9cf442f8d
 
 build:
-  number: {{ build }}
+  number: 0
   skip: true  # [win]
   script:
     - >
        cmake ${CMAKE_ARGS}
        -DBUILD_SHARED_LIBS=ON
        -G Ninja -B _build
-       -DWITH_QP_EXITCODE=1  # [osx and arm64]
-       -DWITH_QP_EXITCODE__TRYRUN_OUTPUT=''  # [osx and arm64]
-       -DWITH_XDP_EXITCODE=1  # [osx and arm64]
-       -DWITH_XDP_EXITCODE__TRYRUN_OUTPUT=''  # [osx and arm64]
+       -DWITH_QP=OFF  # [build_platform != target_platform]
+       -DWITH_XDP=OFF  # [build_platform != target_platform]
+       -DBUILD_TESTING=OFF  # [build_platform != target_platform]
+       -Df03real128_EXITCODE=0  # [build_platform != target_platform]
+       -Df03real128_EXITCODE__TRYRUN_OUTPUT=""  # [build_platform != target_platform]
     - cmake --build _build
     - ctest --test-dir _build --output-on-failure --parallel  # [build_platform == target_platform]
     - cmake --install _build
