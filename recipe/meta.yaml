@@ -14,7 +14,14 @@ build:
   skip: true  # [win]
   script:
     - >
-      cmake ${CMAKE_ARGS} -DBUILD_SHARED_LIBS=ON -G Ninja -B _build -DWITH_QP=OFF  # [build_platform != target_platform] -DWITH_XDP=OFF  # [build_platform != target_platform] -DBUILD_TESTING=OFF  # [build_platform != target_platform] -Df03real128_EXITCODE=0  # [build_platform != target_platform] -Df03real128_EXITCODE__TRYRUN_OUTPUT=""  #
+      cmake ${CMAKE_ARGS}
+        -DBUILD_SHARED_LIBS=ON
+        -G Ninja -B _build
+        -DWITH_QP=OFF  # [build_platform != target_platform]
+        -DWITH_XDP=OFF  # [build_platform != target_platform]
+        -DBUILD_TESTING=OFF  # [build_platform != target_platform]
+        -Df03real128_EXITCODE=0  # [build_platform != target_platform]
+        -Df03real128_EXITCODE__TRYRUN_OUTPUT=""  #
       [build_platform != target_platform]
     - cmake --build _build
     - ctest --test-dir _build --output-on-failure --parallel  # [build_platform == target_platform]
